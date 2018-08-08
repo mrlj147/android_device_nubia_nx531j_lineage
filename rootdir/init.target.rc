@@ -29,25 +29,43 @@
 
 # ZTEMT project customization
 import init.project.rc
-
 on early-init
     mkdir /firmware 0771 system system
     mkdir /bt_firmware 0771 system system
     symlink /data/tombstones /tombstones
     mkdir /dsp 0771 media media
-
-on post-fs
-    export LD_PRELOAD libNimsWrap.so
+    mkdir /data/nfc 0770 nfc nfc
 
 on fs
     wait /dev/block/bootdevice
+
+    wait /dev/block/bootdevice/by-name/persist
+    mount ext4 /dev/block/bootdevice/by-name/persist /persist nosuid nodev barrier=1
+    mkdir /persist/data 0700 system system
+    mkdir /persist/bms 0700 root system
+    restorecon_recursive /persist
+
     mount_all fstab.qcom
     swapon_all fstab.qcom
 
-    restorecon_recursive /persist
-    mkdir /persist/data 0700 system system
-    mkdir /persist/wlan_bt 0700 system system
-    mkdir /persist/audio 0777 media audio
+    # Keeping following partitions outside fstab file. As user may not have
+    # these partition flashed on the device. Failure to mount any partition in fstab file
+    # results in failure to launch late-start class.
+
+    wait /dev/block/bootdevice/by-name/cache
+    mount ext4 /dev/block/bootdevice/by-name/cache /cache nosuid nodev barrier=1
+
+    wait /dev/block/bootdevice/by-name/dsp
+    mount ext4 /dev/block/bootdevice/by-name/dsp /dsp ro nosuid nodev barrier=1
+
+    wait /dev/block/bootdevice/by-name/modem
+    mount vfat /dev/block/bootdevice/by-name/modem /firmware ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0
+
+    wait /dev/block/bootdevice/by-name/bluetooth
+    mount vfat /dev/block/bootdevice/by-name/bluetooth /bt_firmware ro shortname=lower,uid=1002,gid=3002,dmask=227,fmask=337,context=u:object_r:bt_firmware_file:s0
+
+on init
+    write /sys/module/qpnp_rtc/parameters/poweron_alarm 1
 
 on post-fs-data
     mkdir /data/tombstones 0771 system system
@@ -57,18 +75,14 @@ on post-fs-data
     mkdir /tombstones/dsps 0771 system system
     mkdir /persist/data/sfs 0700 system system
     mkdir /persist/data/tz 0700 system system
-    mkdir /persist/qc_senseid 0700 system system
     mkdir /data/misc/dts 0770 media audio
+    mkdir /data/misc/seemp 0700 system system
+    mkdir /data/usf 0700 system system
     mkdir /data/misc/tloc/ 0700 system drmrpc
     mkdir /data/misc/qvop 0660 system system
     mkdir /data/misc/qvr 0770 system system
     mkdir /data/misc/audio_pp 0771 media audio
-    mkdir /data/nfc 0770 nfc nfc
-    mkdir /data/usf 0700 system system
-    chown system system /dev/sysmatdrv
-    chmod 0660 /dev/sysmatdrv
-    mkdir /data/fpc 0770 system system
-    mkdir /data/fpc/s 0770 system system
+
 #enable poweroffalarm
     setprop sys.zte.poalarm.support 1
 
@@ -78,27 +92,19 @@ on property:init.svc.bootanim=running
 on boot
     start rmt_storage
     start rfs_access
-
-    # Access permission for secure touch
+# access permission for secure touch
     chmod 0660 /sys/devices/soc/75ba000.i2c/i2c-12/12-004a/secure_touch_enable
     chmod 0440 /sys/devices/soc/75ba000.i2c/i2c-12/12-004a/secure_touch
     chown system drmrpc /sys/devices/soc/75ba000.i2c/i2c-12/12-004a/secure_touch_enable
     chown system drmrpc /sys/devices/soc/75ba000.i2c/i2c-12/12-004a/secure_touch
-
-    # Access permission for led torch
-    chmod 0666 /sys/class/leds/led:torch_0/brightness
-    chmod 0666 /sys/class/leds/led:torch_1/brightness
-    chmod 0666 /sys/class/leds/led:switch/brightness
-
+    write /proc/sys/kernel/sched_boost 1
     write /sys/devices/soc/75ba000.i2c/i2c-12/12-0020/input/input0/update_fw 1
-
-    # Tuxera exFAT kernel module
-    insmod /system/lib/modules/texfat.ko
-
 # NFC
 #    setprop ro.nfc.port "I2C"
     chmod 0660 /dev/pn544
     chown nfc nfc /dev/pn544
+# Tuxera exFAT kernel module
+    insmod /system/lib/modules/texfat.ko
 
 #start camera server as daemon
 service qcamerasvr /system/bin/mm-qcamera-daemon
@@ -112,16 +118,23 @@ service fingerprintd /system/bin/fingerprintd
     user system
     group system
     socket fingerprintd stream 0660 system system
-
+	user system
+	group system
 service qfp-daemon /system/bin/qfp-daemon
     class late_start
     user system
-    group system drmrpc diag input
+    group system drmrpc diag
 
 service qvop-daemon /system/bin/qvop-daemon
     class late_start
     user system
     group system drmrpc
+
+service qvrd /system/vendor/bin/qvrservice
+    class late_start
+    user system
+    group system camera graphics
+    socket qvrservice stream 0666 system system
 
 #Start up peripheral manager
 service per_mgr system/bin/pm-service
@@ -177,10 +190,12 @@ service qseecomd /system/bin/qseecomd
    user root
    group root
 
-service perfd /system/vendor/bin/perfd
+service gamed /system/vendor/bin/gamed
    class main
-   user root
+   user system
+   group system
    disabled
+   socket gamed seqpacket 0640 system system
 
 service seempd /system/bin/seempd
    class late_start
@@ -300,6 +315,19 @@ service usf-post-boot /system/bin/sh /system/etc/usf_post_boot.sh
 on property:init.svc.bootanim=stopped
     start usf-post-boot
 
+service imsqmidaemon /system/bin/imsqmidaemon
+    class main
+    user system
+    socket ims_qmid stream 0660 system radio
+    group radio log diag
+
+service imsdatadaemon /system/bin/imsdatadaemon
+    class main
+    user system
+    socket ims_datad stream 0660 system radio
+    group system wifi radio inet log diag
+    disabled
+
 service pd_mapper /system/vendor/bin/pd-mapper
      class core
      disabled
@@ -317,6 +345,25 @@ on property:persist.sys.pd_enable=0
 #   class late_start
 #   oneshot
 #
+on property:sys.ims.QMI_DAEMON_STATUS=1
+    start imsdatadaemon
+
+service ims_rtp_daemon /system/bin/ims_rtp_daemon
+   class main
+   user system
+   socket ims_rtpd stream 0660 system radio
+   group radio diag inet log
+   disabled
+
+service imscmservice /system/bin/imscmservice
+   class main
+   user system
+   group radio diag inet log
+   disabled
+
+on property:sys.ims.DATA_DAEMON_STATUS=1
+   start ims_rtp_daemon
+   start imscmservice
 
 service dts_configurator /system/bin/dts_configurator
     class late_start
@@ -379,5 +426,97 @@ service mdtpd /system/vendor/bin/mdtpd
    user root
    group system radio drmrpc
 
-#cmx added
-import init.cmx.rc
+#nubia add systrace
+service systrace /system/bin/systrace
+    class core
+    user root
+    group root readproc
+    critical
+    socket systrace seqpacket 0660 system system
+
+service atrace_action /system/bin/sh /system/etc/systrace/start_systrace.sh
+    class main
+    user root
+    group root
+    disabled
+
+on property:persist.sys.systrace.enable=1
+	start atrace_action
+
+on property:persist.sys.systrace.enable=0
+	start atrace_action
+#nubia add end
+
+#dm instructions added by nubia
+service dmapp /system/bin/dmapp
+    class main
+    seclabel u:r:dm:s0
+
+on charger
+    write /sys/devices/system/cpu/cpu2/online 0
+    write /sys/devices/system/cpu/cpu3/online 0
+    write /sys/module/lpm_levels/parameters/sleep_disabled 0
+
+#LCD display preference added by nubia
+on property:persist.sys.image.enhance=w
+    write /sys/kernel/lcd_enhance/saturation 24
+
+on property:persist.sys.image.enhance=n
+    write /sys/kernel/lcd_enhance/saturation 25
+
+on property:persist.sys.image.enhance=i
+    write /sys/kernel/lcd_enhance/saturation 26
+
+on property:persist.sys.image.colortmp=w
+    write /sys/kernel/lcd_enhance/colortmp 24
+
+on property:persist.sys.image.colortmp=n
+    write /sys/kernel/lcd_enhance/colortmp 25
+
+on property:persist.sys.image.colortmp=c
+    write /sys/kernel/lcd_enhance/colortmp 26
+
+#for lcd colortmp continuous
+on property:persist.sys.lcd.colortmp=*
+   write /sys/kernel/lcd_enhance/colortmp ${persist.sys.lcd.colortmp}
+
+on property:persist.sys.image.cabc=f
+    write /sys/kernel/lcd_enhance/cabc 23
+
+on property:persist.sys.image.cabc=l
+    write /sys/kernel/lcd_enhance/cabc 24
+
+on property:persist.sys.image.cabc=m
+    write /sys/kernel/lcd_enhance/cabc 25
+
+on property:persist.sys.image.cabc=h
+    write /sys/kernel/lcd_enhance/cabc 26
+#LCD display preference end
+
+    wait /dev/block/bootdevice/by-name/system
+    mount ext4 /dev/block/bootdevice/by-name/system /system ro barrier=1
+    start hvdcp_opti
+
+service dhcpcd_eth0 /system/bin/dhcpcd -ABKLG
+	class late_start
+	disabled
+	oneshot
+
+service iprenew_eth0 /system/bin/dhcpcd -n
+	class late_start
+	disabled
+	oneshot
+
+on late-fs
+# boot time fs tune
+   write /sys/block/mmcblk0/queue/iostats 0
+   write /sys/block/mmcblk0/queue/read_ahead_kb 2048
+   write /sys/block/mmcblk0/queue/iosched/slice_idle 0
+   write /sys/block/mmcblk0/queue/nr_requests 256
+
+on property:sys.boot_completed=1
+# end boot time fs tune
+   write /sys/block/mmcblk0/queue/iostats 1
+   write /sys/block/mmcblk0/queue/read_ahead_kb 128
+   write /sys/block/mmcblk0/queue/iosched/slice_idle 10
+   write /sys/block/mmcblk0/queue/nr_requests 128

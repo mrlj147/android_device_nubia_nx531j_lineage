@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# Copyright (c) 2012, The Linux Foundation. All rights reserved.
+# Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -105,7 +105,7 @@ if [ -f "/persist/property/persist.sys.usb.factory" ]; then
 	do
 		setprop persist.sys.usb.factory $line
 	done
-else 
+else
 	mkdir -p /persist/property
 	touch /persist/property/persist.sys.usb.factory
 	chown -R system:system /persist/property
@@ -130,10 +130,18 @@ fi
 
 target=`getprop ro.board.platform`
 
+# soc_ids for 8937
+if [ -f /sys/devices/soc0/soc_id ]; then
+	soc_id=`cat /sys/devices/soc0/soc_id`
+else
+	soc_id=`cat /sys/devices/system/soc/soc0/id`
+fi
+
 #
 # Allow USB enumeration with default PID/VID
 #
 baseband=`getprop ro.baseband`
+
 echo 1  > /sys/class/android_usb/f_mass_storage/lun/nofua
 usb_config=`getprop persist.sys.usb.config`
 build_type=`getprop ro.build.type`
@@ -157,13 +165,32 @@ case "$usb_config" in
               ;;
          esac
       ;;
-esac       
+esac
 fi
-#
-# Add support for exposing lun0 as cdrom in mass-storage
-#
-cdromname="/system/driver.iso"
-echo $cdromname > /sys/class/android_usb/android0/f_mass_storage/lun/file
+
+# set USB controller's device node
+case "$target" in
+    "msm8996")
+        setprop sys.usb.controller "6a00000.dwc3"
+        setprop sys.usb.rndis.func.name "rndis_bam"
+	;;
+    "msm8998")
+        setprop sys.usb.controller "a800000.dwc3"
+        setprop sys.usb.rndis.func.name "gsi"
+	;;
+    "msmfalcon")
+        setprop sys.usb.controller "a800000.dwc3"
+        setprop sys.usb.rndis.func.name "rndis_bam"
+        ;;
+    *)
+	;;
+esac
+
+# check configfs is mounted or not
+if [ -d /config/usb_gadget ]; then
+	setprop sys.usb.configfs 1
+fi
+
 #
 # Do target specific things
 #
@@ -184,11 +211,18 @@ case "$target" in
              fi
          fi
     ;;
-    "msm8994" | "msm8992" | "msm8996" | "titanium")
+    "msm8994" | "msm8992" | "msm8996" | "msm8953")
         echo BAM2BAM_IPA > /sys/class/android_usb/android0/f_rndis_qc/rndis_transports
         echo 131072 > /sys/module/g_android/parameters/mtp_tx_req_len
         echo 131072 > /sys/module/g_android/parameters/mtp_rx_req_len
     ;;
+    "msm8937")
+	case "$soc_id" in
+		"313" | "320")
+		   echo BAM2BAM_IPA > /sys/class/android_usb/android0/f_rndis_qc/rndis_transports
+		;;
+	esac
+   ;;
 esac
 
 #
@@ -234,6 +268,11 @@ case "$baseband" in
     ;;
 esac
 
+#
+# Add support for exposing lun0 as cdrom in mass-storage
+#
+cdromname="/system/driver.iso"
+echo $cdromname > /sys/class/android_usb/android0/f_mass_storage/lun/file
 
 #
 # Initialize RNDIS Diag option. If unset, set it to 'none'.
@@ -254,6 +293,6 @@ fi
 setprop sys.usb.rps_mask 0
 case "$soc_id" in
 	"294" | "295")
-		setprop sys.usb.rps_mask 10
+		setprop sys.usb.rps_mask 40
 	;;
 esac

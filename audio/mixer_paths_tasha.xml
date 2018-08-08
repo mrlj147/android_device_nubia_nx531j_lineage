@@ -1904,6 +1904,7 @@
     </path>
 
     <path name="speaker-no-dsp">
+        <ctl name="Tfa98xx Set Factory Mode" value="1" />
     </path>
 
     <path name="speaker-fluid">
@@ -2584,4 +2585,12 @@
         <ctl name="AK4376 HPR Mixer RDACR" value="1" />
     </path>
 
+    <!-- add by nubia for cts test -->
+    <path name="unprocessed-handset-mic">
+        <path name="handset-mic" />
+    </path>
+
+    <path name="unprocessed-mic">
+        <path name="unprocessed-handset-mic" />
+    </path>
 </mixer>

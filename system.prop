@@ -1,102 +1,13 @@
-# Audio
-ro.qc.sdk.audio.ssr=false
-ro.qc.sdk.audio.fluencetype=fluence
-persist.audio.fluence.voicecall=true
-persist.audio.fluence.voicerec=false
-persist.audio.fluence.speaker=false
-tunnel.audio.encode=false
-media.aac_51_output_enabled=true
-audio.offload.buffer.size.kb=32
-audio.offload.video=true
-audio.offload.pcm.16bit.enable=true
-audio.offload.pcm.24bit.enable=true
-audio.offload.track.enable=false
-audio.deep_buffer.media=true
-use.voice.path.for.pcm.voip=true
-audio.offload.multiaac.enable=true
-audio.offload.gapless.enabled=true
-audio.safx.pbe.enabled=true
-audio.parser.ip.buffer.size=262144
-audio.dolby.ds2.enabled=true
-audio.dolby.ds2.hardbypass=true
-audio.offload.passthrough=false
-audio.offload.multiple.enabled=false
-dmid=3067269873
-audio.ds1.metainfo.key=273
+#
+# from device/zte/NX531J/system.prop
+#
+#
+# system.prop for msm8996
+#
 
-# Bluetooth
-bt.max.hfpclient.connections=1
-qcom.bluetooth.soc=rome
-ro.bluetooth.wipower=true
-ro.bluetooth.emb_wp_mode=true
-
-# Camera
-persist.camera.HAL3.enabled=1
-Camera.no_navigation_bar=true
-ro.config.devicename=nubia Z11
-persist.camera.stats.test=5
-camera.hal1.packagelist=com.skype.raider,com.whatsapp,com.tencent.mm,com.google.android.GoogleCamera
-
-# HAX - remove ASAP
-media.stagefright.legacyencoder=true
-media.stagefright.less-secure=true
-
-# CNE
-persist.cne.feature=1
-
-# Data modules
-ro.use_data_netmgrd=true
-persist.data.netmgrd.qos.enable=true
-persist.data.mode=concurrent
-
-# Fingerprint
-persist.qfp=false
-
-# Graphics
-ro.sf.lcd_density=480
-debug.sf.hw=1
-debug.egl.hw=1
-debug.gralloc.enable_fb_ubwc=1
-dev.pm.dyn_samplingrate=1
-ro.opengles.version=196609
-persist.demo.hdmirotationlock=false
-persist.hwc.enable_vds=1
-sdm.perf_hint_window=50
-sdm.debug.disable_rotator_split=1
-
-# Media
-qcom.hw.aac.encoder=true
-media.stagefright.enable-player=true
-media.stagefright.enable-http=true
-media.stagefright.enable-aac=true
-media.stagefright.enable-qcp=true
-media.stagefright.enable-fma2dp=true
-media.stagefright.enable-scan=true
-mmp.enable.3g2=true
-mm.enable.sec.smoothstreaming=true
-av.debug.disable.pers.cache=true
-mm.enable.qcom_parser=1048575
-persist.mm.enable.prefetch=true
-vidc.enc.dcvs.extra-buff-count=2
-vidc.debug.perf.mode=2
-
-# NFC
-ro.nfc.port=I2C
-
-# Perf
-ro.vendor.extension_library=libqti-perfd-client.so
-ro.sys.fw.bg_apps_limit=60
-
-# Power logs
-persist.power.logs.switch=0
-persist.power.logs.limit.time=72
-persist.power.logs.off.time=240
-persist.power.logs.off.level=8
-persist.power.logs.on.time=20
-persist.power.logs.on.level=10
-
-# RIL
+#rild.libpath=/system/lib/libreference-ril.so
 rild.libpath=/vendor/lib64/libril-qc-qmi-1.so
+#rild.libargs=-d /dev/smd0
 persist.rild.nitz_plmn=
 persist.rild.nitz_long_ons_0=
 persist.rild.nitz_long_ons_1=
@@ -108,25 +19,104 @@ persist.rild.nitz_short_ons_2=
 persist.rild.nitz_short_ons_3=
 ril.subscription.types=NV,RUIM
 DEVICE_PROVISIONED=1
-persist.data.qmi.adb_logmask=0
-persist.logd.size.radio=4M
-persist.net.doxlat=true
-persist.radio.multisim.config=dsds
-persist.radio.apm_sim_not_pwdn=1
-persist.radio.sib16_support=1
-persist.radio.force_on_dc=true
-persist.radio.rat_on=combine
-persist.radio.custom_ecc=1
-persist.radio.NO_STAPA=1
-persist.radio.VT_HYBRID_ENABLE=1
-persist.radio.poweron_opt=1
-ro.telephony.ril.config=simactivation
-ro.telephony.default_network=22,22
-ro.telephony.default_cdma_sub=0
-ro.telephony.call_ring.multiple=false
-telephony.lteOnCdmaDevice=1,1
+# Start in global mode
+ro.telephony.default_network=10
 
-# RmNet Data
+debug.sf.hw=1
+debug.egl.hw=1
+debug.gralloc.enable_fb_ubwc=1
+dalvik.vm.heapsize=36m
+dev.pm.dyn_samplingrate=1
+persist.demo.hdmirotationlock=false
+
+#ro.hdmi.enable=true
+#
+# system props for the cne module
+#
+persist.cne.feature=1
+
+#system prop for enabling/disabling Android XLAT
+persist.net.doxlat=false
+
+#system props for the MM modules
+media.stagefright.enable-player=true
+media.stagefright.enable-http=true
+media.stagefright.enable-aac=true
+media.stagefright.enable-qcp=true
+media.stagefright.enable-scan=true
+mmp.enable.3g2=true
+media.aac_51_output_enabled=true
+mm.enable.smoothstreaming=true
+#185971 is decimal sum of supported parsers in AAL
+#37491 is decimal sum of supported codecs in AAL
+#codecs:(PARSER_)AAC AC3 AMR_NB AMR_WB ASF AVI DTS FLV 3GP 3G2 MKV MP2PS MP2TS MP3 OGG QCP WAV FLAC AIFF APE
+mm.enable.qcom_parser=1048575
+persist.mm.enable.prefetch=true
+
+# Additional i/p buffer in case of encoder DCVS
+vidc.enc.dcvs.extra-buff-count=2
+
+# Set default power mode to low power for encoder
+vidc.debug.perf.mode=2
+
+# disable PQ feature by default
+vidc.enc.disable.pq=true
+
+#
+# system props for the data modules
+#
+ro.use_data_netmgrd=true
+persist.data.netmgrd.qos.enable=true
+persist.data.mode=concurrent
+
+#system props for time-services
+persist.timed.enable=true
+
+#
+# system prop for opengles version
+#
+# 196608 is decimal for 0x30000 to report version 3.0
+# 196609 is decimal for 0x30001 to report version 3.1
+# 196610 is decimal for 0x30002 to report version 3.2
+ro.opengles.version=196610
+
+# system property for maximum number of HFP client connections
+bt.max.hfpclient.connections=1
+
+# System property for cabl
+ro.qualcomm.cabl=0
+
+#
+# System props for telephony
+# System prop to turn on CdmaLTEPhone always
+telephony.lteOnCdmaDevice=1
+
+#Simulate sdcard on /data/media
+#
+persist.fuse_sdcard=true
+
+#system prop for Bluetooth SOC type
+qcom.bluetooth.soc=rome
+
+#system prop for wipower support
+#bt modify : do not use qcom's wipower
+ro.bluetooth.wipower=false
+
+#Set this true as ROME which is programmed
+#as embedded wipower mode by deafult
+#bt modify : do not use qcom's wipower
+ro.bluetooth.emb_wp_mode=false
+
+#device name for camera picture
+ro.config.devicename=nubia Z11
+#add model number
+persist.sys.modelnumber=NX531J
+
+#
+#snapdragon value add features
+#
+
+#system prop for RmNet Data
 persist.rmnet.data.enable=true
 persist.data.wda.enable=true
 persist.data.df.dl_mode=5
@@ -137,11 +127,127 @@ persist.data.df.mux_count=8
 persist.data.df.iwlan_mux=9
 persist.data.df.dev_name=rmnet_usb0
 
-# Timeservice
-persist.timed.enable=true
-
-# Wi-Fi Display
+#property to enable user to access Google WFD settings
 persist.debug.wfd.enable=1
+##property to choose between virtual/external wfd display
 persist.sys.wfd.virtual=0
+#property to set wfd output resolution is 1080P(0) / 720P(1) / 960*540(2) / 800*480(3)
 persist.sys.wfd.zte_resolution=0
+
+#property to enable sde downscale feature for external display
+#sdm.debug.downscale_external=1
+
+#property to specify the number of frames to skip before setting hint
+sdm.perf_hint_window=50
+
+# system prop for NFC DT
+ro.nfc.port=I2C
+
+#property to enable WFD WL solution
 ro.vendor.wl_library=libqti-wl.so
+
+#property for vendor specific library
+ro.vendor.gt_library=libqti-gt.so
+ro.vendor.at_library=libqti-at.so
+sys.games.gt.prof=1
+
+#hwui properties
+ro.hwui.texture_cache_size=72
+ro.hwui.layer_cache_size=48
+ro.hwui.r_buffer_cache_size=8
+ro.hwui.path_cache_size=32
+ro.hwui.gradient_cache_size=1
+ro.hwui.drop_shadow_cache_size=6
+ro.hwui.texture_cache_flushrate=0.4
+ro.hwui.text_small_cache_width=1024
+ro.hwui.text_small_cache_height=1024
+ro.hwui.text_large_cache_width=2048
+ro.hwui.text_large_cache_height=1024
+
+#Disable property for Dolby ds2
+audio.dolby.ds2.enabled=true
+
+#Dolby DS1 DOLBY_UDC
+dmid=3067269873
+audio.ds1.metainfo.key=273
+
+
+# enable navigation bar
+qemu.hw.mainkeys=0
+
+#property to enable VDS WFD solution
+persist.hwc.enable_vds=1
+
+#Enable stm events
+persist.debug.coresight.config=stm-events
+#property to enable fingerprint
+persist.qfp=false
+
+#default pd_enable value
+persist.sys.pd_enable=0
+#Disable rotator split feature
+sdm.debug.disable_rotator_split=1
+
+#Increase cached app limit
+ro.sys.fw.bg_apps_limit=60
+
+#Camera fullscreen doesn't show navigation bar
+Camera.no_navigation_bar=true
+
+#property for game detection feature
+debug.enable.gamed=0
+
+#Disable face beautification
+persist.ts.postmakeup=false
+persist.ts.rtmakeup=false
+
+#Enable device orientation sensor
+ro.qti.sensors.dev_ori=false
+ro.qti.sensors.pmd=false
+ro.qti.sensors.sta_detect=false
+ro.qti.sensors.mot_detect=false
+
+#NUBIA:added for adb authority
+persist.adb.secure=1
+
+#thermal product config
+ro.thermal.product=0
+persist.product.perf=1
+
+#nubia add for bootsound
+sys.zte.bootsound.on=1
+#nubia add end
+
+#add devicename
+persist.sys.devicename=nubia Z11
+#add end
+
+#ZTEMT:added by wangqiaoming for PDAF----start
+persist.camera.stats.test=5
+#ZTEMT:added by wangqiaoming for PDAF----end
+#ZTEMT:added by wangdeyong3 for Camera Video Beauty Trigger Switch --start
+persist.camera.vdbea.switch=1
+#ZTEMT:added by wangdeyong3 for Camera Video Beauty Trigger Switch --end
+#add for factorytest
+persist.factory.nfc=false
+persist.factory.nfc_additional=true
+persist.factory.nfc_no_reader=true
+#add end
+
+#system prop for power logs
+persist.power.logs.switch=1
+persist.power.logs.limit.time=360
+persist.power.logs.off.time=240
+persist.power.logs.off.level=10
+persist.power.logs.on.time=20
+persist.power.logs.on.level=10
+
+#AutoBacklight optimization
+persist.sys.lcd.backlight.max = 4095
+persist.sys.lcd.comp.ratio = 0.8
+
+#nubia add for systrace
+persist.sys.systrace.enable=0
+persist.sys.systrace.platform=1
+persist.sys.systrace.success=1
+#nubia add end
